@@ -44,26 +44,40 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to get cwd: %v", err)
 	}
-
+	trueCsvPath := path.Join(cwd, "assets", "True.csv")
 	outputPath := path.Join(cwd, "assets", "output.csv")
-	outputFile, err := os.Open(outputPath)
+
+	cleanFile(outputPath)
+	outputFile, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		log.Fatalf("unable to open %s: %v", outputPath, err)
 	}
 	defer outputFile.Close()
+	outputFileCsv := csv.NewWriter(outputFile)
+
 	var outputWriteMutex sync.Mutex
 
-	trueCsvPath := path.Join(cwd, "assets", "True.csv")
-
-	err = trueDataset(trueCsvPath, outputFile, &outputWriteMutex)
+	outputFileCsv.Write([]string{
+		"content",
+		"username",
+		"upload_date",
+		"category",
+		"is_misinformation",
+	})
+	err = trueDataset(trueCsvPath, outputFileCsv, &outputWriteMutex)
 	if err != nil {
 		log.Fatalf("unable to parse True.csv: %v", err)
+	}
+
+	outputFileCsv.Flush()
+	if err := outputFileCsv.Error(); err != nil {
+		log.Fatalf("unable to write to output file: %v", err)
 	}
 
 	// fakecsv := path.Join(cwd, "assets", "Fake.csv")
 }
 
-func trueDataset(inputFile string, outputFile *os.File, outputWriteMutex *sync.Mutex) error {
+func trueDataset(inputFile string, outputFile *csv.Writer, outputWriteMutex *sync.Mutex) error {
 	trueFile, err := os.Open(inputFile)
 	if err != nil {
 		return err
@@ -108,13 +122,10 @@ func trueDataset(inputFile string, outputFile *os.File, outputWriteMutex *sync.M
 	return nil
 }
 
-// Returns a processed, cleaned, and stripped version of the provided
-// record ready to be directly inserted into a CSV record. You will 
-// have to remember to put in \n
 func processRecord(
 	record []string, 
 	isMisinformation bool,
-	outputFile *os.File, 
+	outputFile *csv.Writer, 
 	outputMutex *sync.Mutex,
 	recordProcessResponse chan *ProcessRecordResponse,
 ) {
@@ -126,14 +137,20 @@ func processRecord(
 		}
 	}
 
-	outputRecord[OUTPUT_IDX_CONTENT] = strings.Trim(record[DATA_IDX_TITLE], " ")
-	outputRecord[OUTPUT_IDX_USERNAME] = ""
-	outputRecord[OUTPUT_IDX_CATEGORY] = multiStringOp(record[DATA_IDX_SUBJECT], trimWhitespace, strings.ToLower)
-	outputRecord[OUTPUT_IDX_MISINFO] = strconv.FormatBool(isMisinformation)
-	outputRecord[OUTPUT_IDX_UPLOAD_DATE] = strconv.FormatInt(date.Local().Unix(), 10)
+	log.Printf(MultiStringOp(record[DATA_IDX_TITLE], trimWhitespace, RemoveQuotes))
 
+	outputRecord[OUTPUT_IDX_CONTENT] = MultiStringOp(record[DATA_IDX_TITLE], trimWhitespace, RemoveQuotes)
+	outputRecord[OUTPUT_IDX_USERNAME] = ""
+	outputRecord[OUTPUT_IDX_CATEGORY] = MultiStringOp(record[DATA_IDX_SUBJECT], trimWhitespace, strings.ToLower, RemoveQuotes)
+	outputRecord[OUTPUT_IDX_MISINFO] = MultiStringOp(strconv.FormatBool(isMisinformation), RemoveQuotes)
+	outputRecord[OUTPUT_IDX_UPLOAD_DATE] = MultiStringOp(strconv.FormatInt(date.Local().Unix(), 10), RemoveQuotes)
+
+	outputMutex.Lock()
+	defer outputMutex.Unlock()
+
+	err = outputFile.Write(outputRecord)
 	recordProcessResponse <- &ProcessRecordResponse{
-		Err: nil,
+		Err: err,
 	}
 }
 
@@ -148,7 +165,7 @@ func stringToDateMultiFormat(date string, layouts []string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("date '%s' did not match any of the required formats %v", date, layouts)
 }
 
-func multiStringOp(str string, operations ...func(string) string) string {
+func MultiStringOp(str string, operations ...func(string) string) string {
 	processed := strings.Clone(str)
 	for idx := range operations {
 		processed = operations[idx](processed)
@@ -156,11 +173,28 @@ func multiStringOp(str string, operations ...func(string) string) string {
 	return processed
 }
 
+// Calls strconv.Quote if the string doesn't already have quotes in it already
+func RemoveQuotes(str string) string {
+	return strings.Trim(str, "\"")
+}
+
 func trimWhitespace(str string) string {
 	return strings.Trim(str, " ")
 }
 
-
+// Deletes, and re-creates a file to get rid of any existing data
+func cleanFile(path string) error {
+	err := os.Remove(path)
+	if err != nil  {
+		return err
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	f.Close()
+	return err
+}
 
 
 
