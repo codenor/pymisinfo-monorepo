@@ -2,16 +2,10 @@ package main
 
 import (
 	"encoding/csv"
-	"errors"
-	"fmt"
-	"io"
 	"log"
 	"os"
 	"path"
-	"strconv"
-	"strings"
 	"sync"
-	"time"
 )
 
 type (
@@ -42,18 +36,19 @@ var (
 )
 
 // Output Structure:
-// post_content, username, upload_date, category, is_misinformation
 
 func main() {
+	// CONFIGURATION
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("unable to get cwd: %v", err)
 	}
-	trueCsvPath := path.Join(cwd, "assets", "True.csv")
-	fakeCsvPath := path.Join(cwd, "assets", "Fake.csv")
 	outputPath := path.Join(cwd, "assets", "output.csv")
 
 	cleanFile(outputPath)
+
+	// OPEN OUTPUT FILE
 
 	outputFile, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
@@ -72,135 +67,15 @@ func main() {
 		"is_misinformation",
 	})
 
-	err = processFile(trueCsvPath, outputFileCsv, false, &outputWriteMutex)
-	if err != nil {
-		log.Fatalf("unable to parse True.csv: %v", err)
-	}
+	// DATA PROCESSING
 
-	err = processFile(fakeCsvPath, outputFileCsv, true, &outputWriteMutex)
-	if err != nil {
-		log.Fatalf("unable to parse False.csv: %v", err)
-	}
+	ParseMelbourneUni(cwd, outputFileCsv, &outputWriteMutex)
+
+	// FINISH
 
 	outputFileCsv.Flush()
 	if err := outputFileCsv.Error(); err != nil {
 		log.Fatalf("unable to write to output file: %v", err)
 	}
-
-	// fakecsv := path.Join(cwd, "assets", "Fake.csv")
 }
 
-func processFile(inputFile string, outputFile *csv.Writer, isMisinformation bool, outputWriteMutex *sync.Mutex) error {
-	trueFile, err := os.Open(inputFile)
-	if err != nil {
-		return err
-	}
-	defer trueFile.Close()
-
-	// Total amount of lines in the CSV file, populated as the file is being read
-	lines := 0
-	// Number of lines processed. Will be used to calculate when all goroutines are complete
-	linesComplete := 0
-
-	trueCsv := csv.NewReader(trueFile)
-	trueCsv.LazyQuotes = true
-	recordProcessResponse := make(chan *ProcessRecordResponse)
-
-	for true {
-		record, err := trueCsv.Read()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return err
-		}
-		lines++
-		if lines == 1 {
-			continue
-		}
-
-		go processRecord(record, isMisinformation, outputFile, outputWriteMutex, recordProcessResponse, lines)
-	}
-
-	for response := range recordProcessResponse {
-		if response.Err != nil {
-			log.Printf("error on line %d (skipping): %v", response.LineNumber, response.Err)
-		}
-
-		linesComplete++
-		if linesComplete >= lines-1 {
-			break
-		}
-	}
-
-	return nil
-}
-
-func processRecord(
-	record []string,
-	isMisinformation bool,
-	outputFile *csv.Writer,
-	outputMutex *sync.Mutex,
-	recordProcessResponse chan *ProcessRecordResponse,
-	lineNumber int,
-) {
-	outputRecord := make([]string, 5)
-	date, err := stringToDateMultiFormat(trimWhitespace(record[DATA_IDX_DATE]), POSSIBLE_DATE_LAYOUTS[:])
-	if err != nil {
-		recordProcessResponse <- &ProcessRecordResponse{
-			Err:        err,
-			LineNumber: lineNumber,
-		}
-	}
-
-	outputRecord[OUTPUT_IDX_CONTENT] = MultiStringOp(record[DATA_IDX_TITLE], trimWhitespace)
-	outputRecord[OUTPUT_IDX_USERNAME] = ""
-	outputRecord[OUTPUT_IDX_CATEGORY] = MultiStringOp(record[DATA_IDX_SUBJECT], trimWhitespace, strings.ToLower)
-	outputRecord[OUTPUT_IDX_MISINFO] = MultiStringOp(strconv.FormatBool(isMisinformation))
-	outputRecord[OUTPUT_IDX_UPLOAD_DATE] = MultiStringOp(strconv.FormatInt(date.Local().Unix(), 10))
-
-	outputMutex.Lock()
-	defer outputMutex.Unlock()
-
-	err = outputFile.Write(outputRecord)
-	recordProcessResponse <- &ProcessRecordResponse{
-		Err: err,
-	}
-}
-
-// Converts a string into a date, that might appear in different layouts
-func stringToDateMultiFormat(date string, layouts []string) (time.Time, error) {
-	for i := range layouts {
-		conv, err := time.Parse(layouts[i], date)
-		if err == nil {
-			return conv, nil
-		}
-	}
-	return time.Time{}, fmt.Errorf("date '%s' did not match any of the required formats %v", date, layouts)
-}
-
-func MultiStringOp(str string, operations ...func(string) string) string {
-	processed := strings.Clone(str)
-	for idx := range operations {
-		processed = operations[idx](processed)
-	}
-	return processed
-}
-
-func trimWhitespace(str string) string {
-	return strings.Trim(str, " ")
-}
-
-// Deletes, and re-creates a file to get rid of any existing data
-func cleanFile(path string) error {
-	err := os.Remove(path)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	f.Close()
-	return err
-}
