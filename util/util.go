@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 // Converts a string into a date, that might appear in different layouts
-func stringToDateMultiFormat(date string, layouts []string) (time.Time, error) {
+func StringToDateMultiFormat(date string, layouts []string) (time.Time, error) {
 	for i := range layouts {
 		conv, err := time.Parse(layouts[i], date)
 		if err == nil {
@@ -26,12 +26,12 @@ func MultiStringOp(str string, operations ...func(string) string) string {
 	return processed
 }
 
-func trimWhitespace(str string) string {
+func TrimWhitespace(str string) string {
 	return strings.Trim(str, " ")
 }
 
 // Deletes, and re-creates a file to get rid of any existing data
-func cleanFile(path string) error {
+func CleanFile(path string) error {
 	err := os.Remove(path)
 	if err != nil {
 		return err

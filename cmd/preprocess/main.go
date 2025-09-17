@@ -2,38 +2,12 @@ package main
 
 import (
 	"encoding/csv"
+	"gomisinfoai/data"
+	"gomisinfoai/util"
 	"log"
 	"os"
 	"path"
 	"sync"
-)
-
-type (
-	ProcessRecordResponse struct {
-		LineNumber int
-		Err        error
-	}
-)
-
-const (
-	DATA_IDX_TITLE         = 0
-	DATA_IDX_TEXT          = 1
-	DATA_IDX_SUBJECT       = 2
-	DATA_IDX_DATE          = 3
-	OUTPUT_IDX_CONTENT     = 0
-	OUTPUT_IDX_USERNAME    = 1
-	OUTPUT_IDX_UPLOAD_DATE = 2
-	OUTPUT_IDX_CATEGORY    = 3
-	OUTPUT_IDX_MISINFO     = 4
-	OUTPUT_IDX_DATASOURCE  = 5
-)
-
-var (
-	POSSIBLE_DATE_LAYOUTS = [...]string{
-		"January 2, 2006",
-		"2-Jan-06",
-		"Jan 2, 2006",
-	}
 )
 
 // Output Structure:
@@ -47,7 +21,7 @@ func main() {
 	}
 	outputPath := path.Join(cwd, "assets", "output.csv")
 
-	cleanFile(outputPath)
+	util.CleanFile(outputPath)
 
 	// OPEN OUTPUT FILE
 
@@ -65,13 +39,13 @@ func main() {
 		"username",
 		"upload_date",
 		"category",
-		"is_misinformation",
+		"misinformation_type",
 		"datasource",
 	})
 
 	// DATA PROCESSING
 
-	ParseVicUniDataset(cwd, outputFileCsv, &outputWriteMutex)
+	data.ParseVicUniDataset(cwd, outputFileCsv, &outputWriteMutex)
 
 	// FINISH
 
