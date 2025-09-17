@@ -25,6 +25,7 @@ const (
 	OUTPUT_IDX_UPLOAD_DATE = 2
 	OUTPUT_IDX_CATEGORY    = 3
 	OUTPUT_IDX_MISINFO     = 4
+	OUTPUT_IDX_DATASOURCE  = 5
 )
 
 var (
@@ -65,11 +66,12 @@ func main() {
 		"upload_date",
 		"category",
 		"is_misinformation",
+		"datasource",
 	})
 
 	// DATA PROCESSING
 
-	ParseMelbourneUni(cwd, outputFileCsv, &outputWriteMutex)
+	ParseVicUniDataset(cwd, outputFileCsv, &outputWriteMutex)
 
 	// FINISH
 
@@ -78,4 +80,3 @@ func main() {
 		log.Fatalf("unable to write to output file: %v", err)
 	}
 }
-
