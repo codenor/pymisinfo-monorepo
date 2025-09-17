@@ -3,17 +3,37 @@ package main
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 	"sync"
+	"time"
 )
 
 type (
 	ProcessRecordResponse struct {
 		Err error
 	}
+)
+
+const (
+	DATA_IDX_TITLE = 0
+	DATA_IDX_TEXT = 1
+	DATA_IDX_SUBJECT = 2
+	DATA_IDX_DATE = 3
+	OUTPUT_IDX_CONTENT = 0
+	OUTPUT_IDX_USERNAME = 1
+	OUTPUT_IDX_UPLOAD_DATE = 2
+	OUTPUT_IDX_CATEGORY = 3
+	OUTPUT_IDX_MISINFO = 4
+)
+
+var (
+	POSSIBLE_DATE_LAYOUTS = [...]string{ "January 2, 2006" }
 )
 
 // Output Structure:
@@ -71,7 +91,7 @@ func trueDataset(inputFile string, outputFile *os.File, outputWriteMutex *sync.M
 			continue
 		}
 
-		go processRecord(record, outputFile, outputWriteMutex, recordProcessResponse)
+		go processRecord(record, false, outputFile, outputWriteMutex, recordProcessResponse)
 	}
 
 	for response := range recordProcessResponse {
@@ -80,7 +100,6 @@ func trueDataset(inputFile string, outputFile *os.File, outputWriteMutex *sync.M
 		}
 
 		linesComplete++;
-		log.Printf("Processed line %d, %d total (%.2f)", linesComplete, lines, float64(linesComplete) / float64(lines))
 		if linesComplete >= lines - 1 {
 			break
 		}
@@ -94,16 +113,52 @@ func trueDataset(inputFile string, outputFile *os.File, outputWriteMutex *sync.M
 // have to remember to put in \n
 func processRecord(
 	record []string, 
+	isMisinformation bool,
 	outputFile *os.File, 
 	outputMutex *sync.Mutex,
 	recordProcessResponse chan *ProcessRecordResponse,
 ) {
+	outputRecord := make([]string, 5)
+	date, err := stringToDateMultiFormat(trimWhitespace(record[DATA_IDX_DATE]), POSSIBLE_DATE_LAYOUTS[:])
+	if err != nil {
+		recordProcessResponse <- &ProcessRecordResponse{
+			Err: err,
+		}
+	}
+
+	outputRecord[OUTPUT_IDX_CONTENT] = strings.Trim(record[DATA_IDX_TITLE], " ")
+	outputRecord[OUTPUT_IDX_USERNAME] = ""
+	outputRecord[OUTPUT_IDX_CATEGORY] = multiStringOp(record[DATA_IDX_SUBJECT], trimWhitespace, strings.ToLower)
+	outputRecord[OUTPUT_IDX_MISINFO] = strconv.FormatBool(isMisinformation)
+	outputRecord[OUTPUT_IDX_UPLOAD_DATE] = strconv.FormatInt(date.Local().Unix(), 10)
+
 	recordProcessResponse <- &ProcessRecordResponse{
 		Err: nil,
 	}
 }
 
+// Converts a string into a date, that might appear in different layouts
+func stringToDateMultiFormat(date string, layouts []string) (time.Time, error) {
+	for i := range layouts {
+		conv, err := time.Parse(layouts[i], date)
+		if err == nil {
+			return conv, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("date '%s' did not match any of the required formats %v", date, layouts)
+}
 
+func multiStringOp(str string, operations ...func(string) string) string {
+	processed := strings.Clone(str)
+	for idx := range operations {
+		processed = operations[idx](processed)
+	}
+	return processed
+}
+
+func trimWhitespace(str string) string {
+	return strings.Trim(str, " ")
+}
 
 
 
