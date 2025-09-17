@@ -16,7 +16,8 @@ import (
 
 type (
 	ProcessRecordResponse struct {
-		Err error
+		LineNumber int
+		Err        error
 	}
 )
 
@@ -33,7 +34,11 @@ const (
 )
 
 var (
-	POSSIBLE_DATE_LAYOUTS = [...]string{"January 2, 2006"}
+	POSSIBLE_DATE_LAYOUTS = [...]string{
+		"January 2, 2006",
+		"2-Jan-06",
+		"Jan 2, 2006",
+	}
 )
 
 // Output Structure:
@@ -45,9 +50,11 @@ func main() {
 		log.Fatalf("unable to get cwd: %v", err)
 	}
 	trueCsvPath := path.Join(cwd, "assets", "True.csv")
+	fakeCsvPath := path.Join(cwd, "assets", "Fake.csv")
 	outputPath := path.Join(cwd, "assets", "output.csv")
 
 	cleanFile(outputPath)
+
 	outputFile, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		log.Fatalf("unable to open %s: %v", outputPath, err)
@@ -64,9 +71,15 @@ func main() {
 		"category",
 		"is_misinformation",
 	})
-	err = trueDataset(trueCsvPath, outputFileCsv, &outputWriteMutex)
+
+	err = processFile(trueCsvPath, outputFileCsv, false, &outputWriteMutex)
 	if err != nil {
 		log.Fatalf("unable to parse True.csv: %v", err)
+	}
+
+	err = processFile(fakeCsvPath, outputFileCsv, true, &outputWriteMutex)
+	if err != nil {
+		log.Fatalf("unable to parse False.csv: %v", err)
 	}
 
 	outputFileCsv.Flush()
@@ -77,7 +90,7 @@ func main() {
 	// fakecsv := path.Join(cwd, "assets", "Fake.csv")
 }
 
-func trueDataset(inputFile string, outputFile *csv.Writer, outputWriteMutex *sync.Mutex) error {
+func processFile(inputFile string, outputFile *csv.Writer, isMisinformation bool, outputWriteMutex *sync.Mutex) error {
 	trueFile, err := os.Open(inputFile)
 	if err != nil {
 		return err
@@ -106,12 +119,12 @@ func trueDataset(inputFile string, outputFile *csv.Writer, outputWriteMutex *syn
 			continue
 		}
 
-		go processRecord(record, false, outputFile, outputWriteMutex, recordProcessResponse)
+		go processRecord(record, isMisinformation, outputFile, outputWriteMutex, recordProcessResponse, lines)
 	}
 
 	for response := range recordProcessResponse {
 		if response.Err != nil {
-			return response.Err
+			log.Printf("error on line %d (skipping): %v", response.LineNumber, response.Err)
 		}
 
 		linesComplete++
@@ -129,12 +142,14 @@ func processRecord(
 	outputFile *csv.Writer,
 	outputMutex *sync.Mutex,
 	recordProcessResponse chan *ProcessRecordResponse,
+	lineNumber int,
 ) {
 	outputRecord := make([]string, 5)
 	date, err := stringToDateMultiFormat(trimWhitespace(record[DATA_IDX_DATE]), POSSIBLE_DATE_LAYOUTS[:])
 	if err != nil {
 		recordProcessResponse <- &ProcessRecordResponse{
-			Err: err,
+			Err:        err,
+			LineNumber: lineNumber,
 		}
 	}
 
