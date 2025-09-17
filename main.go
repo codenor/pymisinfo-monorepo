@@ -21,19 +21,19 @@ type (
 )
 
 const (
-	DATA_IDX_TITLE = 0
-	DATA_IDX_TEXT = 1
-	DATA_IDX_SUBJECT = 2
-	DATA_IDX_DATE = 3
-	OUTPUT_IDX_CONTENT = 0
-	OUTPUT_IDX_USERNAME = 1
+	DATA_IDX_TITLE         = 0
+	DATA_IDX_TEXT          = 1
+	DATA_IDX_SUBJECT       = 2
+	DATA_IDX_DATE          = 3
+	OUTPUT_IDX_CONTENT     = 0
+	OUTPUT_IDX_USERNAME    = 1
 	OUTPUT_IDX_UPLOAD_DATE = 2
-	OUTPUT_IDX_CATEGORY = 3
-	OUTPUT_IDX_MISINFO = 4
+	OUTPUT_IDX_CATEGORY    = 3
+	OUTPUT_IDX_MISINFO     = 4
 )
 
 var (
-	POSSIBLE_DATE_LAYOUTS = [...]string{ "January 2, 2006" }
+	POSSIBLE_DATE_LAYOUTS = [...]string{"January 2, 2006"}
 )
 
 // Output Structure:
@@ -90,6 +90,7 @@ func trueDataset(inputFile string, outputFile *csv.Writer, outputWriteMutex *syn
 	linesComplete := 0
 
 	trueCsv := csv.NewReader(trueFile)
+	trueCsv.LazyQuotes = true
 	recordProcessResponse := make(chan *ProcessRecordResponse)
 
 	for true {
@@ -113,8 +114,8 @@ func trueDataset(inputFile string, outputFile *csv.Writer, outputWriteMutex *syn
 			return response.Err
 		}
 
-		linesComplete++;
-		if linesComplete >= lines - 1 {
+		linesComplete++
+		if linesComplete >= lines-1 {
 			break
 		}
 	}
@@ -123,9 +124,9 @@ func trueDataset(inputFile string, outputFile *csv.Writer, outputWriteMutex *syn
 }
 
 func processRecord(
-	record []string, 
+	record []string,
 	isMisinformation bool,
-	outputFile *csv.Writer, 
+	outputFile *csv.Writer,
 	outputMutex *sync.Mutex,
 	recordProcessResponse chan *ProcessRecordResponse,
 ) {
@@ -137,13 +138,11 @@ func processRecord(
 		}
 	}
 
-	log.Printf(MultiStringOp(record[DATA_IDX_TITLE], trimWhitespace, RemoveQuotes))
-
-	outputRecord[OUTPUT_IDX_CONTENT] = MultiStringOp(record[DATA_IDX_TITLE], trimWhitespace, RemoveQuotes)
+	outputRecord[OUTPUT_IDX_CONTENT] = MultiStringOp(record[DATA_IDX_TITLE], trimWhitespace)
 	outputRecord[OUTPUT_IDX_USERNAME] = ""
-	outputRecord[OUTPUT_IDX_CATEGORY] = MultiStringOp(record[DATA_IDX_SUBJECT], trimWhitespace, strings.ToLower, RemoveQuotes)
-	outputRecord[OUTPUT_IDX_MISINFO] = MultiStringOp(strconv.FormatBool(isMisinformation), RemoveQuotes)
-	outputRecord[OUTPUT_IDX_UPLOAD_DATE] = MultiStringOp(strconv.FormatInt(date.Local().Unix(), 10), RemoveQuotes)
+	outputRecord[OUTPUT_IDX_CATEGORY] = MultiStringOp(record[DATA_IDX_SUBJECT], trimWhitespace, strings.ToLower)
+	outputRecord[OUTPUT_IDX_MISINFO] = MultiStringOp(strconv.FormatBool(isMisinformation))
+	outputRecord[OUTPUT_IDX_UPLOAD_DATE] = MultiStringOp(strconv.FormatInt(date.Local().Unix(), 10))
 
 	outputMutex.Lock()
 	defer outputMutex.Unlock()
@@ -173,11 +172,6 @@ func MultiStringOp(str string, operations ...func(string) string) string {
 	return processed
 }
 
-// Calls strconv.Quote if the string doesn't already have quotes in it already
-func RemoveQuotes(str string) string {
-	return strings.Trim(str, "\"")
-}
-
 func trimWhitespace(str string) string {
 	return strings.Trim(str, " ")
 }
@@ -185,7 +179,7 @@ func trimWhitespace(str string) string {
 // Deletes, and re-creates a file to get rid of any existing data
 func cleanFile(path string) error {
 	err := os.Remove(path)
-	if err != nil  {
+	if err != nil {
 		return err
 	}
 	f, err := os.Create(path)
@@ -195,8 +189,3 @@ func cleanFile(path string) error {
 	f.Close()
 	return err
 }
-
-
-
-
-
