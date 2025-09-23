@@ -32,6 +32,7 @@ const (
 	OUTPUT_IDX_CATEGORY     = 3
 	OUTPUT_IDX_MISINFO_TYPE = 4
 	OUTPUT_IDX_DATASOURCE   = 5
+	OUTPUT_IDX_HEDGE_CHARS  = 6
 
 	MISINFO_TYPE_LIE    = "misinformation"
 	MISINFO_TYPE_TRUTH  = "truth"
@@ -50,22 +51,27 @@ func ParseVicUniDataset(
 	outputFileCsv *csv.Writer,
 	outputWriteMutex *sync.Mutex,
 ) {
+	hedgeWords, err := GetHedgeWords(cwd)
+	if err != nil {
+		log.Fatalf("unable to get hedge words: %v", err)
+	}
+
 	trueCsvPath := path.Join(cwd, "assets", "vicuni", "True.csv")
 	fakeCsvPath := path.Join(cwd, "assets", "vicuni", "Fake.csv")
 
-	err := processFile(trueCsvPath, outputFileCsv, MISINFO_TYPE_TRUTH, outputWriteMutex)
+	err = processFile(trueCsvPath, outputFileCsv, MISINFO_TYPE_TRUTH, outputWriteMutex, hedgeWords)
 	if err != nil {
 		log.Fatalf("unable to parse True.csv: %v", err)
 	}
 
-	err = processFile(fakeCsvPath, outputFileCsv, MISINFO_TYPE_LIE, outputWriteMutex)
+	err = processFile(fakeCsvPath, outputFileCsv, MISINFO_TYPE_LIE, outputWriteMutex, hedgeWords)
 	if err != nil {
 		log.Fatalf("unable to parse False.csv: %v", err)
 	}
 
 }
 
-func processFile(inputFile string, outputFile *csv.Writer, misinfoType string, outputWriteMutex *sync.Mutex) error {
+func processFile(inputFile string, outputFile *csv.Writer, misinfoType string, outputWriteMutex *sync.Mutex, hedgeWords []string) error {
 	trueFile, err := os.Open(inputFile)
 	if err != nil {
 		return err
@@ -94,7 +100,7 @@ func processFile(inputFile string, outputFile *csv.Writer, misinfoType string, o
 			continue
 		}
 
-		go processVicUniRecord(record, misinfoType, outputFile, outputWriteMutex, recordProcessResponse, lines)
+		go processVicUniRecord(record, misinfoType, outputFile, outputWriteMutex, recordProcessResponse, lines, hedgeWords)
 	}
 
 	for response := range recordProcessResponse {
@@ -111,6 +117,15 @@ func processFile(inputFile string, outputFile *csv.Writer, misinfoType string, o
 	return nil
 }
 
+// Counts the amount of times a phrase has been mentioned in a string
+func countOfCharactersWithinText(text string, phrases []string) int {
+	total := 0
+	for i := range phrases {
+		total += strings.Count(text, phrases[i])
+	}
+	return total
+}
+
 func processVicUniRecord(
 	record []string,
 	misinfoType string,
@@ -118,8 +133,9 @@ func processVicUniRecord(
 	outputMutex *sync.Mutex,
 	recordProcessResponse chan *ProcessRecordResponse,
 	lineNumber int,
+	hedgeWords []string,
 ) {
-	outputRecord := make([]string, 6)
+	outputRecord := make([]string, 7)
 	date, err := util.StringToDateMultiFormat(util.TrimWhitespace(record[DATA_IDX_DATE]), POSSIBLE_DATE_LAYOUTS[:])
 	if err != nil {
 		recordProcessResponse <- &ProcessRecordResponse{
@@ -134,6 +150,7 @@ func processVicUniRecord(
 	outputRecord[OUTPUT_IDX_MISINFO_TYPE] = misinfoType
 	outputRecord[OUTPUT_IDX_UPLOAD_DATE] = util.MultiStringOp(strconv.FormatInt(date.Local().Unix(), 10))
 	outputRecord[OUTPUT_IDX_DATASOURCE] = "Victoria University"
+	outputRecord[OUTPUT_IDX_HEDGE_CHARS] = strconv.FormatInt(int64(countOfCharactersWithinText(record[DATA_IDX_TITLE], hedgeWords)), 10)
 
 	outputMutex.Lock()
 	defer outputMutex.Unlock()
