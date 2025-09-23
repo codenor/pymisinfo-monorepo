@@ -33,6 +33,8 @@ const (
 	OUTPUT_IDX_MISINFO_TYPE = 4
 	OUTPUT_IDX_DATASOURCE   = 5
 	OUTPUT_IDX_HEDGE_CHARS  = 6
+	OUTPUT_IDX_SYMBOLS      = 7
+	OUTPUT_IDX_ALL_CAPS     = 8
 
 	MISINFO_TYPE_LIE    = "misinformation"
 	MISINFO_TYPE_TRUTH  = "truth"
@@ -71,7 +73,13 @@ func ParseVicUniDataset(
 
 }
 
-func processFile(inputFile string, outputFile *csv.Writer, misinfoType string, outputWriteMutex *sync.Mutex, hedgeWords []string) error {
+func processFile(
+	inputFile string, 
+	outputFile *csv.Writer, 
+	misinfoType string, 
+	outputWriteMutex *sync.Mutex, 
+	hedgeWords []string,
+) error {
 	trueFile, err := os.Open(inputFile)
 	if err != nil {
 		return err
@@ -135,7 +143,7 @@ func processVicUniRecord(
 	lineNumber int,
 	hedgeWords []string,
 ) {
-	outputRecord := make([]string, 7)
+	outputRecord := make([]string, 9)
 	date, err := util.StringToDateMultiFormat(util.TrimWhitespace(record[DATA_IDX_DATE]), POSSIBLE_DATE_LAYOUTS[:])
 	if err != nil {
 		recordProcessResponse <- &ProcessRecordResponse{
@@ -151,6 +159,8 @@ func processVicUniRecord(
 	outputRecord[OUTPUT_IDX_UPLOAD_DATE] = util.MultiStringOp(strconv.FormatInt(date.Local().Unix(), 10))
 	outputRecord[OUTPUT_IDX_DATASOURCE] = "Victoria University"
 	outputRecord[OUTPUT_IDX_HEDGE_CHARS] = strconv.FormatInt(int64(countOfCharactersWithinText(record[DATA_IDX_TITLE], hedgeWords)), 10)
+	outputRecord[OUTPUT_IDX_SYMBOLS] = strconv.FormatInt(int64(countOfCharactersWithinText(record[DATA_IDX_TITLE], SYMBOLS)), 10)
+	outputRecord[OUTPUT_IDX_ALL_CAPS] = strconv.FormatInt(int64(CountWordsAllCaps(record[DATA_IDX_TITLE])), 10)
 
 	outputMutex.Lock()
 	defer outputMutex.Unlock()

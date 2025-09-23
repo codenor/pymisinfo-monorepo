@@ -42,6 +42,8 @@ func main() {
 		"misinformation_type",
 		"datasource",
 		"hedge_words_count",
+		"symobls",
+		"all_caps",
 	})
 
 	// DATA PROCESSING
