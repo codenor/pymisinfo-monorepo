@@ -44,6 +44,7 @@ func main() {
 		"hedge_words_count",
 		"symobls",
 		"all_caps",
+		"fk_score",
 	})
 
 	// DATA PROCESSING

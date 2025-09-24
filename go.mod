@@ -7,12 +7,14 @@ require (
 	codeberg.org/go-latex/latex v0.1.0 // indirect
 	codeberg.org/go-pdf/fpdf v0.10.0 // indirect
 	git.sr.ht/~sbinet/gg v0.6.0 // indirect
+	github.com/BluntSporks/readability v0.0.0-20170405091137-6f1eb9729696 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/campoy/embedmd v1.0.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/guptarohit/asciigraph v0.5.1 // indirect
 	github.com/mattn/go-runewidth v0.0.7 // indirect
+	github.com/mtso/syllables v0.1.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rocketlaunchr/dataframe-go v0.0.0-20201007021539-67b046771f0b // indirect
