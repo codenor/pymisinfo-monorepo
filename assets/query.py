@@ -1,16 +1,31 @@
 #!/usr/bin/env python
 
-import chromadb
 import sys
 
+import chromadb
+from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
+
+ollama_ef = OllamaEmbeddingFunction(
+    url="http://localhost:11434",
+    model_name="embeddinggemma:latest",
+)
+
 if len(sys.argv) != 2:
-    print(f"invalid command. usage: {sys.argv[0]} \"prompt\"")
+    print(f'invalid command. usage: {sys.argv[0]} "prompt"')
     exit()
 
 prompt = sys.argv[1]
+prompt_embedding = ollama_ef.embed_query([prompt])
 
 client = chromadb.PersistentClient(path="/var/lib/chroma/")
 collection = client.get_or_create_collection("misinformation")
-result = collection.query(query_texts=[prompt], n_results=5, include=["documents", 'distances',])
+result = collection.query(
+    query_embeddings=prompt_embedding,
+    n_results=5,
+    include=[
+        "documents",
+        "distances",
+    ],
+)
 
 print(result)
