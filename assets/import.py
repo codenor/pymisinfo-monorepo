@@ -94,7 +94,7 @@ def main():
     documents, ids = data_from_preprocessed_csv(args.input_file)
 
     # Import into chromadb
-    chunk_size = 5000
+    chunk_size = 100
     chunked_documents = chunks(documents, chunk_size)
     chunked_ids = chunks(ids, chunk_size)
     with Progress() as p:
