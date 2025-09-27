@@ -1,24 +1,26 @@
 #!/usr/bin/env python
 
+import argparse
 import csv
 
 import chromadb
-import argparse
 from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 from rich.progress import Progress
 
 
 class ProgramArgs:
     def __init__(self, 
-         preprocessedCsvPath: str = "./preprocessed.csv", 
-         ollamaUrl: str = "http://localhost:11434", 
-         ollamaModelName: str = "embeddinggemma:latest", 
-         chromadbPath: str = "/var/lib/chroma/"
+         input_file: str = "./preprocessed.csv", 
+         ollama_url: str = "http://localhost:11434", 
+         ollama_model_name: str = "embeddinggemma:latest", 
+         chroma_db_path: str = "/var/lib/chroma/",
+         chromadb_collection_name: str = "misinformation",
     ) -> None:
-        self.preprocessedCsvPath = preprocessedCsvPath
-        self.ollamaUrl = ollamaUrl
-        self.ollamaModelName = ollamaModelName
-        self.chromadbPath = chromadbPath
+        self.input_file = input_file
+        self.ollama_url = ollama_url
+        self.ollama_model_name = ollama_model_name
+        self.chroma_db_path = chroma_db_path
+        self.chromadb_collection_name = chromadb_collection_name
 
 
 def get_args() -> ProgramArgs:
@@ -52,12 +54,11 @@ def chunks(lst: list, n: int) -> list:
 
 
 def data_from_preprocessed_csv(file: str) -> tuple[list, list]:
-
     documents = []
     ids = []
     records_c = 0
 
-    with open("./preprocessed.csv", "r") as csvfile:
+    with open(file, "r") as csvfile:
         records_c = len(csvfile.readlines()) - 1  # to get rid of header
 
     with open(file, "r") as csvfile:
@@ -77,22 +78,20 @@ def data_from_preprocessed_csv(file: str) -> tuple[list, list]:
 def main():
     # Init chromadb
     args = get_args()
-    print(vars(args))
-    return
-    print("initialising and connecting to chromadb")
+
+    print(f"initialising and connecting to chromadb at {args.chroma_db_path}")
     ollama_ef = OllamaEmbeddingFunction(
-        url="http://localhost:11434",
-        model_name="embeddinggemma:latest",
+        url=args.ollama_url,
+        model_name=args.ollama_model_name,
     )
 
-    client = chromadb.PersistentClient(path="/var/lib/chroma/")
+    client = chromadb.PersistentClient(path=args.chroma_db_path)
 
-    collection_name = "misinformation"
-    client.delete_collection(collection_name)
-    collection = client.create_collection(collection_name)
+    client.delete_collection(args.chromadb_collection_name)
+    collection = client.create_collection(args.chromadb_collection_name)
 
-    print("collecting data from ./preprocessed.csv")
-    documents, ids = data_from_preprocessed_csv("./preprocessed.csv")
+    print(f"collecting data from {args.input_file}")
+    documents, ids = data_from_preprocessed_csv(args.input_file)
 
     # Import into chromadb
     chunk_size = 5000
