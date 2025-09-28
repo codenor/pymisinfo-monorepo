@@ -21,11 +21,17 @@ client = chromadb.PersistentClient(path="/var/lib/chroma/")
 collection = client.get_or_create_collection("misinformation")
 result = collection.query(
     query_embeddings=prompt_embedding,
-    n_results=5,
+    n_results=1,
     include=[
         "documents",
         "distances",
+        "metadatas"
     ],
 )
 
-print(result)
+result_metadata = result.get("metadatas")
+if not result_metadata or len(result_metadata) < 1:
+    print("no closest match found")
+    exit()
+
+print(result_metadata[0][0].get("misinformation"))

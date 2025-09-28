@@ -53,8 +53,9 @@ def chunks(lst: list, n: int) -> list:
     return new_lst
 
 
-def data_from_preprocessed_csv(file: str) -> tuple[list, list]:
+def data_from_preprocessed_csv(file: str) -> tuple[list, list, list]:
     documents = []
+    metadata = []
     ids = []
     records_c = 0
 
@@ -69,10 +70,11 @@ def data_from_preprocessed_csv(file: str) -> tuple[list, list]:
             for row in reader:
                 inputs = str(row[0])
                 documents.append(inputs)
+                metadata.append({ "misinformation": str(row[4]) })
                 ids.append(str(idx))
                 p.update(t, advance=1)
                 idx += 1
-    return documents, ids
+    return ids, documents, metadata
 
 
 def main():
@@ -91,12 +93,13 @@ def main():
     collection = client.create_collection(args.chromadb_collection_name)
 
     print(f"collecting data from {args.input_file}")
-    documents, ids = data_from_preprocessed_csv(args.input_file)
+    ids, documents, metadatas = data_from_preprocessed_csv(args.input_file)
 
     # Import into chromadb
     chunk_size = 100
     chunked_documents = chunks(documents, chunk_size)
     chunked_ids = chunks(ids, chunk_size)
+    chunked_metadatas = chunks(metadatas, chunk_size)
     with Progress() as p:
         t = p.add_task(
             f"inserting into chromadb in batches of {chunk_size}",
@@ -107,6 +110,7 @@ def main():
             collection.add(
                 documents=chunked_documents[idx],
                 embeddings=embeddings,
+                metadatas=chunked_metadatas[idx],
                 ids=chunked_ids[idx],
             )
             p.update(t, advance=1)
