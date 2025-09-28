@@ -4,9 +4,19 @@ This repository contains a bunch of stuff that might resemble an artificial inte
 
 ## Cloning And Executing
 
-Because I have no idea how to use Python, I have added `assets/venv` into the `gitignore` file, so you may create & install dependencies there. 
+### Using Nix
 
-### Setup
+This project has a convenient nix shell environment you can use as an alternative to a python virtual environment. Download the package manager via NixOS or the [Nix package manager](https://nixos.org/download/). 
+
+To switch environments, execute:
+
+```
+nix-shell
+```
+
+You are now inside the environment defined by shell.nix
+
+### Using Python Virtual Environment
 
 Firstly, you will need to install Ollama on your system. If your using Arch Linux, it is easier to install it manually (https://wiki.archlinux.org/title/Ollama) instead of through podman. The reason I prefer using ollama over the default embedding function is that it is easier to configure gpu acceleration, making this process much quicker.
 
@@ -15,12 +25,11 @@ Once that is done, enable the service and execute `ollama pull embeddinggemma:la
 To configure chroma and actually run the programs,
 
 ```sh
-# I will make this optional in the future, but I like 
+# I will make this optional in the future, but I like
 # having everything in /var/lib so whatever
 sudo mkdir /var/lib/chroma/
 sudo chown $(USER):$(USER) -R /var/lib/chroma/
 
-cd assets
 python -m venv ./venv
 source venv/bin/activate
 pip install pandas matplotlib chromadb rich ollama
@@ -30,6 +39,8 @@ python charts.py            # Display all data visualisations
 python import.py            # Import all data into ChromaDB
 python query.py "<prompt>"  # Search data within the ChromaDB database
 ```
+
+## Usage 
 
 ### Using `preprocess-vicuni.py`
 
