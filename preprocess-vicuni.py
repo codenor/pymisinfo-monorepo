@@ -259,7 +259,7 @@ def check_delete_file(path: str, auto_accept: bool=False):
         if auto_accept:
             os.remove(path)
         else:
-            i = input(f"overwriting {path}. Continue? [y/N] ")
+            i = input(f"overwriting '{path}', Continue? [y/N] ")
             i = i.strip().lower()
             if i == 'y':
                 os.remove(path)
