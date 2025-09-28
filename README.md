@@ -1,28 +1,10 @@
-# Go + Python Misinformation AI
+# Python Misinformation Detection AI
 
-This is a massive monorepo containing a bunch of things that might resemble an artificial intelligence. 
-
-Golang is used to import and pre-process the data. Python is used as the actual artificial intelligence part of the project.
+This repository contains a bunch of stuff that might resemble an artificial intelligence. 
 
 ## Cloning And Executing
 
-Ensure that when you clone this repo, you place it under `~/go/src/` or whatever you have configured that as. 
-
-### Preprocessor
-
-Running the preprocessor is as simple as running `go run .`
-
-## Python 
-
-- `pandas`
-- `matplotlib`
-- `chromadb`
-- `ollama`
-- `rich`
-
 Because I have no idea how to use Python, I have added `assets/venv` into the `gitignore` file, so you may create & install dependencies there. 
-
-Why am I using Python for this? I thought I needed it, and it turned out that I didn't really need to in the first place.
 
 ### Setup
 
@@ -43,12 +25,45 @@ python -m venv ./venv
 source venv/bin/activate
 pip install pandas matplotlib chromadb rich ollama
 
-python charts.py           # Display all data visualisations 
-python import.py           # Import all data into ChromaDB
-python query.py "<prompt>" # Search data within the ChromaDB database
+python preprocess-vicuni.py # Process Victoria University's datasets
+python charts.py            # Display all data visualisations 
+python import.py            # Import all data into ChromaDB
+python query.py "<prompt>"  # Search data within the ChromaDB database
 ```
 
-### `input.py`
+### Using `preprocess-vicuni.py`
+
+```
+usage: Misinformation Dataset Preprocessor (Victoria University Dataset)
+       [-h] [-t INPUT_TRUE] [-f INPUT_FAKE] [-o OUTPUT] [-m IN_MEMORY] [-y AUTO_ACCEPT]
+       [-w HEDGE_WORD_FILE]
+
+Preprocesses (cleans) everything from the victoria university dataset into an output csv
+file
+
+options:
+  -h, --help            show this help message and exit
+  -t, --input-true INPUT_TRUE
+                        The True.csv file from the Victoria University misinformation
+                        dataset. Default='./vicuni/True.csv'
+  -f, --input-fake INPUT_FAKE
+                        The Fake.csv file from the Victoria University misinformation
+                        dataset. Default='./vicuni/Fake.csv'
+  -o, --output OUTPUT   The file to output the processed information.
+                        Default='./preprocessed.csv'
+  -m, --in-memory IN_MEMORY
+                        Whether the CSV processing should be done in-memory. You will need
+                        a lot of RAM on your system for this to work, but will have
+                        performance improvements. Default=False
+  -y, --auto-accept AUTO_ACCEPT
+                        Whether the program should automatically accept inputs (such as
+                        overwriting files). Default=False
+  -w, --hedge-word-file HEDGE_WORD_FILE
+                        Path to the file containing comma-delimited hedge words.
+                        Default='./hedge-words.txt'
+```
+
+### Using `import.py`
 
 ```
 usage: Misinformation Dataset Importer [-h] [-i INPUT] [-o OLLAMA_URL] [-m OLLAMA_MODEL_NAME] [-c CHROMADB_PATH]

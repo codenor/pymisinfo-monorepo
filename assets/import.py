@@ -35,7 +35,6 @@ def get_args() -> ProgramArgs:
     parser.add_argument("-o", "--olama-url", dest="ollama_url", help="The URL to your running ollama instance", default="http://localhost:11434")
     parser.add_argument("-m", "--olama-model-name", dest="ollama_model_name", help="The model name for your ollama instance for embedding generation", default="embeddinggemma:latest")
     parser.add_argument("-c", "--chromadb-path", dest="chromadb_path", help="Path to the ChromaDB database", default="/var/lib/chroma/")
-    # parser.add_argument(flags=["-h", "--help"], help="Show this screen", action='store_true')
 
     arguments = parser.parse_args()
 
