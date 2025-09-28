@@ -3,7 +3,7 @@
 import pandas
 import matplotlib.pyplot as pyplot
 
-df = pandas.read_csv("./preprocessed.csv")
+df = pandas.read_csv("./assets/preprocessed.csv")
 
 bad_chars = [ "donald trump", "covid-19", "covid 19", "coronavirus", "trump" ]
 

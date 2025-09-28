@@ -25,11 +25,11 @@ SYMBOLS = ["!", "...", "?"]
 class ProgramArgs:
     def __init__(
         self,
-        input_true_file: str = "./vicuni/True.csv",
-        input_fake_file: str = "./vicuni/Fake.csv",
-        output_file: str = "./preprocess.csv",
+        input_true_file: str = "./assets/vicuni/True.csv",
+        input_fake_file: str = "./assets/vicuni/Fake.csv",
+        output_file: str = "./assets/preprocess.csv",
         parse_csv_in_memory: bool = False,
-        hedge_char_file: str = "./hedge-words.txt",
+        hedge_char_file: str = "./assets/hedge-words.txt",
         auto_accept: bool = False,
     ) -> None:
         self.input_true_file = input_true_file
@@ -162,22 +162,22 @@ def get_args() -> ProgramArgs:
         "-t",
         "--input-true",
         dest="input_true",
-        help="The True.csv file from the Victoria University misinformation dataset. Default='./vicuni/True.csv'",
-        default="./vicuni/True.csv",
+        help="The True.csv file from the Victoria University misinformation dataset. Default='./assets/vicuni/True.csv'",
+        default="./assets/vicuni/True.csv",
     )
     parser.add_argument(
         "-f",
         "--input-fake",
         dest="input_fake",
-        help="The Fake.csv file from the Victoria University misinformation dataset. Default='./vicuni/Fake.csv'",
-        default="./vicuni/Fake.csv",
+        help="The Fake.csv file from the Victoria University misinformation dataset. Default='./assets/vicuni/Fake.csv'",
+        default="./assets/vicuni/Fake.csv",
     )
     parser.add_argument(
         "-o",
         "--output",
         dest="output",
-        help="The file to output the processed information. Default='./preprocessed.csv'",
-        default="./preprocessed.csv",
+        help="The file to output the processed information. Default='./assets/preprocessed.csv'",
+        default="./assets/preprocessed.csv",
     )
     parser.add_argument(
         "-m",
@@ -197,8 +197,8 @@ def get_args() -> ProgramArgs:
         "-w",
         "--hedge-word-file",
         dest="hedge_word_file",
-        help="Path to the file containing comma-delimited hedge words. Default='./hedge-words.txt'",
-        default="./hedge-words.txt",
+        help="Path to the file containing comma-delimited hedge words. Default='./assets/hedge-words.txt'",
+        default="./assets/hedge-words.txt",
     )
 
     arguments = parser.parse_args()

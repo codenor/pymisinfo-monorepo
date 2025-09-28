@@ -1,2 +1,3 @@
 venv
-preprocessed.csv
+assets/preprocessed.csv
+assets/output.csv
