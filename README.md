@@ -1,18 +1,38 @@
 # Go + Python Misinformation AI
 
-This is a massive monorepo containing a bunch of things that might resemble an artificial intelligence. 
+This is a massive monorepo containing a bunch of things that might resemble an artificial intelligence.
 
 Golang is used to import and pre-process the data. Python is used as the actual artificial intelligence part of the project.
 
 ## Cloning And Executing
 
-Ensure that when you clone this repo, you place it under `~/go/src/` or whatever you have configured that as. 
+Ensure that when you clone this repo, you place it under `~/go/src/` or whatever you have configured that as.
 
 ### Preprocessor
 
 Running the preprocessor is as simple as running `go run .`
 
-## Python 
+## Python
+
+Run this in project root to create virtual environment in `assets/venv`:
+
+```
+python -m venv assets/venv
+```
+
+Activate the environment:
+
+```
+source assets/venv/bin/activate
+```
+
+Install dependenices from `requirements.txt`
+
+```
+pip install -r requirements.txt
+```
+
+### Current dependenices
 
 - `pandas`
 - `matplotlib`
@@ -20,9 +40,25 @@ Running the preprocessor is as simple as running `go run .`
 - `ollama`
 - `rich`
 
-Because I have no idea how to use Python, I have added `assets/venv` into the `gitignore` file, so you may create & install dependencies there. 
+### Using Nix
 
-Why am I using Python for this? I thought I needed it, and it turned out that I didn't really need to in the first place.
+#### Requirements
+
+NixOS or [Nix package manager](https://nixos.org/download/)
+
+Change directory where nix.shell is:
+
+```
+cd assets
+```
+
+Run commend:
+
+```
+nix-shell
+```
+
+You are now inside the environment defined by shell.nix
 
 ### Setup
 
@@ -33,7 +69,7 @@ Once that is done, enable the service and execute `ollama pull embeddinggemma:la
 To configure chroma and actually run the programs,
 
 ```sh
-# I will make this optional in the future, but I like 
+# I will make this optional in the future, but I like
 # having everything in /var/lib so whatever
 sudo mkdir /var/lib/chroma/
 sudo chown $(USER):$(USER) -R /var/lib/chroma/
@@ -43,7 +79,7 @@ python -m venv ./venv
 source venv/bin/activate
 pip install pandas matplotlib chromadb rich ollama
 
-python charts.py           # Display all data visualisations 
+python charts.py           # Display all data visualisations
 python import.py           # Import all data into ChromaDB
 python query.py "<prompt>" # Search data within the ChromaDB database
 ```
