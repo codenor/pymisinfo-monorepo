@@ -68,6 +68,11 @@ def data_from_preprocessed_csv(file: str) -> tuple[list, list, list]:
         with Progress() as p:
             t = p.add_task("generating documents to insert", total=records_c)
             for row in reader:
+                # Skip header
+                if idx == 0:
+                    idx += 1
+                    continue
+
                 inputs = str(row[0])
                 documents.append(inputs)
                 metadata.append({ "misinformation": str(row[4]) })

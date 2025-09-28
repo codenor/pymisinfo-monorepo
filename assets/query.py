@@ -21,7 +21,7 @@ client = chromadb.PersistentClient(path="/var/lib/chroma/")
 collection = client.get_or_create_collection("misinformation")
 result = collection.query(
     query_embeddings=prompt_embedding,
-    n_results=1,
+    n_results=10,
     include=[
         "documents",
         "distances",
@@ -30,8 +30,15 @@ result = collection.query(
 )
 
 result_metadata = result.get("metadatas")
-if not result_metadata or len(result_metadata) < 1:
+result_documents = result.get("documents")
+result_distances = result.get("distances")
+if not result_metadata or len(result_metadata) < 1 or not result_documents or not result_distances:
     print("no closest match found")
     exit()
 
-print(result_metadata[0][0].get("misinformation"))
+score = result_metadata[0][0].get("misinformation")
+print(f"This post is considered: {score}")
+print(f"Closest Results:")
+
+for i in range(0, len(result.items()) - 1):
+    print(f"\tIs: {result_metadata[0][i]};\n\t -> Distances: {result_distances[0][i]};\n\t -> Title: {result_documents[0][i]};")

@@ -38,11 +38,11 @@ To configure chroma and actually run the programs,
 sudo mkdir /var/lib/chroma/
 sudo chown $(USER):$(USER) -R /var/lib/chroma/
 
+cd assets
 python -m venv ./venv
 source venv/bin/activate
 pip install pandas matplotlib chromadb rich ollama
 
-cd assets
 python charts.py           # Display all data visualisations 
 python import.py           # Import all data into ChromaDB
 python query.py "<prompt>" # Search data within the ChromaDB database
