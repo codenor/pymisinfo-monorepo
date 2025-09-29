@@ -5,6 +5,7 @@ import csv
 
 import chromadb
 import math
+import chromadb.errors
 from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 from rich.progress import Progress
 
@@ -12,19 +13,17 @@ from rich.progress import Progress
 class ProgramArgs:
     def __init__(
         self,
-        input_file: str = "./assets/preprocessed.csv",
+        input_file: str = "./assets/preprocessed-training.csv",
         ollama_url: str = "http://localhost:11434",
         ollama_model_name: str = "embeddinggemma:latest",
         chroma_db_path: str = "/var/lib/chroma/",
         chromadb_collection_name: str = "misinformation",
-        training_percent: float = 0.9
     ) -> None:
         self.input_file = input_file
         self.ollama_url = ollama_url
         self.ollama_model_name = ollama_model_name
         self.chroma_db_path = chroma_db_path
         self.chromadb_collection_name = chromadb_collection_name
-        self.training_percent = training_percent
 
 
 def get_args() -> ProgramArgs:
@@ -39,8 +38,8 @@ def get_args() -> ProgramArgs:
         "-i",
         "--input",
         dest="input",
-        help="The input CSV file from the preprocessor program. Default='./assets/preprocessed.csv'",
-        default="./assets/preprocessed.csv",
+        help="The input CSV file from the preprocessor program. Default='./assets/preprocessed-training.csv'",
+        default="./assets/preprocessed-training.csv",
     )
     parser.add_argument(
         "-o",
@@ -70,13 +69,6 @@ def get_args() -> ProgramArgs:
         help="Path to the ChromaDB database. Default='misinformation'",
         default="misinformation",
     )
-    parser.add_argument(
-        "-t",
-        "--training-percent",
-        dest="training_percent",
-        help="Amount of records to use from the input files for training data (in decimal form). Default=0.9",
-        default=0.9,
-    )
 
     arguments = parser.parse_args()
 
@@ -86,7 +78,6 @@ def get_args() -> ProgramArgs:
         str(arguments.ollama_model_name),
         str(arguments.chromadb_path),
         str(arguments.chromadb_collection_name),
-        float(str(arguments.training_percent)),
     )
 
 
@@ -102,7 +93,7 @@ def chunks(lst: list, n: int) -> list:
 
 
 def data_from_preprocessed_csv(
-    file: str, recordPercent: float
+    file: str
 ) -> tuple[list, list, list]:
     documents = []
     metadata = []
@@ -111,9 +102,6 @@ def data_from_preprocessed_csv(
 
     with open(file, "r") as csvfile:
         records_c = len(csvfile.readlines()) - 1
-        records_c = int(math.floor(records_c - (records_c * (1 - recordPercent))))
-
-    print(f"taking first {recordPercent * 100}% of records ({records_c}) for training data")
 
     with open(file, "r") as csvfile:
         reader = csv.reader(csvfile)
@@ -150,11 +138,17 @@ def main():
 
     client = chromadb.PersistentClient(path=args.chroma_db_path)
 
-    client.delete_collection(args.chromadb_collection_name)
+    try: 
+        client.delete_collection(args.chromadb_collection_name)
+    except chromadb.errors.NotFoundError:
+        print(f"collection {args.chromadb_collection_name} does not exist. creating one")
+    except Exception as e:
+        raise e
+
     collection = client.create_collection(args.chromadb_collection_name)
 
     print(f"collecting data from {args.input_file}")
-    ids, documents, metadatas = data_from_preprocessed_csv(args.input_file, args.training_percent)
+    ids, documents, metadatas = data_from_preprocessed_csv(args.input_file)
 
     # Import into chromadb
     chunk_size = 100
