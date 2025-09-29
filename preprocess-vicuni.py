@@ -5,6 +5,7 @@ import csv
 import os
 from datetime import date, datetime
 from typing import Any, Generator
+from rich.progress import Progress
 
 import pandas
 from numpy import uint
