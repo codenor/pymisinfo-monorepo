@@ -90,3 +90,30 @@ options:
 
 This program depends on ollama, so please have that installed. Install guide can be found here: https://docs.ollama.com/quickstart
 ```
+
+### Using `test.py`
+
+```
+usage: Misinformation Dataset Testeng [-h] [-i INPUT] [-c CHROMADB_PATH] [-d CHROMADB_COLLECTION_NAME] [-o OLLAMA_URL]
+                                      [-e OLLAMA_EMBEDDING_MODEL] [-v VERBOSE_LEVEL] [-m MAX_TESTS]
+
+Uses the test database to determine how effective the AI model is at it's job
+
+options:
+  -h, --help            show this help message and exit
+  -i, --input INPUT     The testing CSV file from the preprocessor program. Default='./assets/preprocessed-testing.csv'
+  -c, --chromadb-path CHROMADB_PATH
+                        Path to the ChromaDB database. Default='/var/lib/chroma'
+  -d, --chromadb-collection-name CHROMADB_COLLECTION_NAME
+                        Path to the ChromaDB database. Default='misinformation'
+  -o, --olama-url OLLAMA_URL
+                        URL to Ollama instance. Default='localhost:11434'
+  -e, --olama-embedding-model OLLAMA_EMBEDDING_MODEL
+                        The model to use to create embeddings for queries. Should be the same as what you used when
+                        importing into chromadb. Default='embeddinggemma:latest'
+  -v, --verbose-level VERBOSE_LEVEL
+                        0=nothing (default), 1=show incorrect matches, 2=show incorrect matches and distances, 3=show
+                        everything
+  -m, --max-tests MAX_TESTS
+                        amount of tests to do in total (used for debugging). 0 will process all records. Default=0
+```
