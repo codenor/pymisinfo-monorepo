@@ -4,6 +4,7 @@ import argparse
 from typing import Generator, List
 
 import chromadb
+import numpy
 from chromadb.api.types import Document
 from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 from pandas import pandas
@@ -19,6 +20,7 @@ class ProgramArgs:
         ollama_url: str = "localhost:11434",
         embedding_model: str = "embeddinggemma:latest",
         verbose_level: int = 0,
+        max_tests: int = 0,
     ) -> None:
         self.test_file = test_file
         self.chroma_db_path = chroma_db_path
@@ -26,6 +28,7 @@ class ProgramArgs:
         self.ollama_url = ollama_url
         self.ollama_embedding_model = embedding_model
         self.verbose_level = verbose_level
+        self.max_tests = max_tests
 
 
 class CsvRecord:
@@ -97,6 +100,13 @@ def get_args() -> ProgramArgs:
         help="0=nothing (default), 1=show incorrect matches, 2=show incorrect matches and distances, 3=show everything",
         default=0,
     )
+    parser.add_argument(
+        "-m",
+        "--max-tests",
+        dest="max_tests",
+        help="amount of tests to do in total (used for debugging). 0 will process all records. Default=0",
+        default=0,
+    )
 
     arguments = parser.parse_args()
 
@@ -107,6 +117,7 @@ def get_args() -> ProgramArgs:
         str(arguments.ollama_url),
         str(arguments.ollama_embedding_model),
         int(arguments.verbose_level),
+        int(arguments.max_tests),
     )
 
 
@@ -126,7 +137,9 @@ def test_all_records(
     test_file_path: str,
     ollama_ef: OllamaEmbeddingFunction,
     chroma_collection: chromadb.Collection,
+    max_records: int,
 ):
+    idx = 0
     for record in get_records(test_file_path):
         prompt_embedding = ollama_ef.embed_query([record.content])
         result = chroma_collection.query(
@@ -141,6 +154,10 @@ def test_all_records(
 
         yield Result(record, result_metadata, result_documents, result_distances)
 
+        idx += 1
+        if idx >= max_records:
+            break
+
 
 def main():
     args = get_args()
@@ -148,7 +165,10 @@ def main():
     print("connecting to chromadb")
     client = chromadb.PersistentClient(path=args.chroma_db_path)
     collection = client.get_collection(args.chromadb_collection_name)
-    records_c = len(pandas.read_csv(args.test_file))
+    if args.max_tests > 0:
+        records_c = numpy.minimum(len(pandas.read_csv(args.test_file)), args.max_tests)
+    else:
+        records_c = len(pandas.read_csv(args.test_file))
 
     print(
         f"preparing ollama embedding function ({args.ollama_url} | {args.ollama_embedding_model})"
@@ -161,8 +181,12 @@ def main():
     correct = 0
     incorrect = 0
     with Progress() as p:
-        t = p.add_task(f"testing model: {records_c} records to be processed", total=records_c)
-        for result in test_all_records(args.test_file, ollama_ef, collection):
+        t = p.add_task(
+            f"testing model: {records_c} records to be processed", total=records_c
+        )
+        for result in test_all_records(
+            args.test_file, ollama_ef, collection, records_c
+        ):
             if (
                 not result.metadata
                 or len(result.metadata) < 1
@@ -182,7 +206,7 @@ def main():
             p.advance(t)
 
     print(f"correct: {correct}, incorrect: {incorrect}")
-    print(f"accuracy: {100 * (incorrect / records_c)}%")
+    print(f"accuracy: {100 * (correct / records_c)}%")
 
 
 if __name__ == "__main__":
