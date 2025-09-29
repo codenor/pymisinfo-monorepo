@@ -45,51 +45,48 @@ python query.py "<prompt>"  # Search data within the ChromaDB database
 ### Using `preprocess-vicuni.py`
 
 ```
-usage: Misinformation Dataset Preprocessor (Victoria University Dataset)
-       [-h] [-t INPUT_TRUE] [-f INPUT_FAKE] [-o OUTPUT] [-m IN_MEMORY] [-y AUTO_ACCEPT]
-       [-w HEDGE_WORD_FILE]
+usage: Misinformation Dataset Preprocessor (Victoria University Dataset) [-h] [-t INPUT_TRUE] [-f INPUT_FAKE] [-o OUTPUT_TRAINING] [-l OUTPUT_TESTING] [-m IN_MEMORY] [-p TRAINING_PERCENT] [-y AUTO_ACCEPT] [-w HEDGE_WORD_FILE]
 
-Preprocesses (cleans) everything from the victoria university dataset into an output csv
-file
+Preprocesses (cleans) everything from the victoria university dataset into an output csv file
 
 options:
   -h, --help            show this help message and exit
   -t, --input-true INPUT_TRUE
-                        The True.csv file from the Victoria University misinformation
-                        dataset. Default='./vicuni/True.csv'
+                        The True.csv file from the Victoria University misinformation dataset. Default='./assets/vicuni/True.csv'
   -f, --input-fake INPUT_FAKE
-                        The Fake.csv file from the Victoria University misinformation
-                        dataset. Default='./vicuni/Fake.csv'
-  -o, --output OUTPUT   The file to output the processed information.
-                        Default='./preprocessed.csv'
+                        The Fake.csv file from the Victoria University misinformation dataset. Default='./assets/vicuni/Fake.csv'
+  -o, --output-training OUTPUT_TRAINING
+                        The file to output the processed information. Default='./assets/preprocessed-training.csv'
+  -l, --output-testing OUTPUT_TESTING
+                        The file to output data used for testing. Default='./assets/preprocessed-testing.csv'
   -m, --in-memory IN_MEMORY
-                        Whether the CSV processing should be done in-memory. You will need
-                        a lot of RAM on your system for this to work, but will have
-                        performance improvements. Default=False
+                        Whether the CSV processing should be done in-memory. You will need a lot of RAM on your system for this to work, but will have performance improvements. Default=False
+  -p, --training-percent TRAINING_PERCENT
+                        Percentage of data to use for training. Default=0.9
   -y, --auto-accept AUTO_ACCEPT
-                        Whether the program should automatically accept inputs (such as
-                        overwriting files). Default=False
+                        Whether the program should automatically accept inputs (such as overwriting files). Default=False
   -w, --hedge-word-file HEDGE_WORD_FILE
-                        Path to the file containing comma-delimited hedge words.
-                        Default='./hedge-words.txt'
+                        Path to the file containing comma-delimited hedge words. Default='./assets/hedge-words.txt'
 ```
 
 ### Using `import.py`
 
 ```
-usage: Misinformation Dataset Importer [-h] [-i INPUT] [-o OLLAMA_URL] [-m OLLAMA_MODEL_NAME] [-c CHROMADB_PATH]
+usage: Misinformation Dataset Importer [-h] [-i INPUT] [-o OLLAMA_URL] [-m OLLAMA_MODEL_NAME] [-c CHROMADB_PATH] [-d CHROMADB_COLLECTION_NAME]
 
 Imports data from the preprocessor into a Chroma database for analysis and machine learning
 
 options:
   -h, --help            show this help message and exit
-  -i, --input INPUT     The input CSV file from the preprocessor program
+  -i, --input INPUT     The input CSV file from the preprocessor program. Default='./assets/preprocessed-training.csv'
   -o, --olama-url OLLAMA_URL
-                        The URL to your running ollama instance
+                        The URL to your running ollama instance. Default='http://localhost:11434'
   -m, --olama-model-name OLLAMA_MODEL_NAME
-                        The model name for your ollama instance for embedding generation
+                        The model name for your ollama instance for embedding generation. Default='embeddinggemma:latest'
   -c, --chromadb-path CHROMADB_PATH
-                        Path to the ChromaDB database
+                        Path to the ChromaDB database. Default='/var/lib/chroma'
+  -d, --chromadb-collection-name CHROMADB_COLLECTION_NAME
+                        Path to the ChromaDB database. Default='misinformation'
 
 This program depends on ollama, so please have that installed. Install guide can be found here: https://docs.ollama.com/quickstart
 ```
