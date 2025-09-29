@@ -2,16 +2,14 @@
 
 import argparse
 import csv
-import io
-from datetime import date, datetime, time
 import os
-from typing import Any
+from datetime import date, datetime
+from typing import Any, Generator
 
 import pandas
 from numpy import uint
 from pandas.io.common import file_exists
 from rich.progress import Progress
-from typing_extensions import Writer
 
 DATE_FORMATS = [
     "%B %d, %Y",  # "January 2, 2006"
@@ -21,23 +19,39 @@ DATE_FORMATS = [
 
 SYMBOLS = ["!", "...", "?"]
 
+CSV_HEADERS = [
+    "content",
+    "username",
+    "upload_date",
+    "category",
+    "misinformation_type",
+    "datasource",
+    "hedge_words_count",
+    "symobls",
+    "all_caps",
+]
+
 
 class ProgramArgs:
     def __init__(
         self,
         input_true_file: str = "./assets/vicuni/True.csv",
         input_fake_file: str = "./assets/vicuni/Fake.csv",
-        output_file: str = "./assets/preprocess.csv",
+        output_file_training: str = "./assets/preprocessed-training.csv",
+        output_file_testing: str = "./assets/preprocess-testing.csv",
+        training_percent: float = 0.9,
         parse_csv_in_memory: bool = False,
         hedge_char_file: str = "./assets/hedge-words.txt",
         auto_accept: bool = False,
     ) -> None:
         self.input_true_file = input_true_file
         self.input_fake_file = input_fake_file
-        self.output_file = output_file
+        self.output_file_training = output_file_training
         self.parse_csv_in_memory = parse_csv_in_memory
         self.hedge_char_file = hedge_char_file
         self.auto_accept = auto_accept
+        self.output_file_testing = output_file_testing
+        self.training_percent = training_percent
 
 
 class CsvRecord:
@@ -90,7 +104,7 @@ def try_strptime(date_str, formats: list[str]) -> datetime | None:
 def get_hedge_words(file: str = "./hedge-words.txt") -> list[str]:
     with open(file, "r") as f:
         text = f.readline()
-        words = text.split(',')
+        words = text.split(",")
         idx = 0
         for w in words:
             words[idx] = w.strip().lower()
@@ -174,10 +188,17 @@ def get_args() -> ProgramArgs:
     )
     parser.add_argument(
         "-o",
-        "--output",
-        dest="output",
-        help="The file to output the processed information. Default='./assets/preprocessed.csv'",
-        default="./assets/preprocessed.csv",
+        "--output-training",
+        dest="output_training",
+        help="The file to output the processed information. Default='./assets/preprocessed-training.csv'",
+        default="./assets/preprocessed-training.csv",
+    )
+    parser.add_argument(
+        "-l",
+        "--output-testing",
+        dest="output_testing",
+        help="The file to output data used for testing. Default='./assets/preprocessed-testing.csv'",
+        default="./assets/preprocessed-testing.csv",
     )
     parser.add_argument(
         "-m",
@@ -185,6 +206,13 @@ def get_args() -> ProgramArgs:
         dest="in_memory",
         help="Whether the CSV processing should be done in-memory. You will need a lot of RAM on your system for this to work, but will have performance improvements. Default=False",
         default=False,
+    )
+    parser.add_argument(
+        "-p",
+        "--training-percent",
+        dest="training_percent",
+        help="Percentage of data to use for training. Default=0.9",
+        default=0.9,
     )
     parser.add_argument(
         "-y",
@@ -206,7 +234,9 @@ def get_args() -> ProgramArgs:
     return ProgramArgs(
         str(arguments.input_true),
         str(arguments.input_fake),
-        str(arguments.output),
+        str(arguments.output_training),
+        str(arguments.output_testing),
+        float(arguments.training_percent),
         bool(arguments.in_memory),
         str(arguments.hedge_word_file),
         bool(arguments.auto_accept),
@@ -217,10 +247,14 @@ def process_file(
     hedge_words: list[str],
     input_file_path: str,
     misinfo_classification: str,
-    output_file_writer,
+    output_file_training_writer,
+    output_file_testing_writer,
     parse_in_memory: bool,
+    training_percent: float,
 ):
-    output_file_csv = csv.writer(output_file_writer)
+    output_file_csv_testing = csv.writer(output_file_testing_writer)
+    output_file_csv_training = csv.writer(output_file_training_writer)
+
     csv_data = pandas.read_csv(
         input_file_path,
         header=1,
@@ -235,74 +269,101 @@ def process_file(
         memory_map=parse_in_memory,
     )
 
+    csv_data = csv_data.sample(frac=1)
+    split_idx = int(training_percent * len(csv_data))
+
+    training_data = csv_data.iloc[:split_idx]
+    testing_data = csv_data.iloc[split_idx:]
+
     with Progress() as p:
-        t = p.add_task("generating documents to insert", total=len(csv_data))
+        t_training = p.add_task("generating training data", total=len(training_data))
+        t_testing = p.add_task("generating testing data", total=len(testing_data))
 
-        idx = 0
-        for current in csv_data.itertuples():
-            idx += 1
-            try:
-                record = process_record(
-                    current, misinfo_classification, hedge_words, SYMBOLS
-                )
-            except ValueError as v:
-                print(f"invalid record at line {idx}: {v}")
-                continue
+        for _ in process_dataframe(
+            training_data,
+            output_file_csv_training,
+            misinfo_classification,
+            hedge_words,
+            SYMBOLS,
+        ):
+            p.advance(t_training)
 
-            output_file_csv.writerow(record.to_csv_list())
+        for _ in process_dataframe(
+            testing_data,
+            output_file_csv_testing,
+            misinfo_classification,
+            hedge_words,
+            SYMBOLS,
+        ):
+            p.advance(t_testing)
 
-            p.advance(t)
+
+def process_dataframe(
+    df: pandas.DataFrame,
+    output_file: Any,
+    misinfo_classification: str,
+    hedge_words: list[str],
+    symbols: list[str],
+) -> Generator:
+    idx = 0
+    for current in df.itertuples():
+        idx += 1
+        try:
+            record = process_record(
+                current, misinfo_classification, hedge_words, symbols
+            )
+        except ValueError as v:
+            print(f"invalid record at line {idx}: {v}")
+            continue
+
+        output_file.writerow(record.to_csv_list())
+        yield
 
 
-def check_delete_file(path: str, auto_accept: bool=False):
+def check_delete_file(path: str, auto_accept: bool = False):
     if file_exists(path):
         if auto_accept:
             os.remove(path)
         else:
             i = input(f"overwriting '{path}', Continue? [y/N] ")
             i = i.strip().lower()
-            if i == 'y':
+            if i == "y":
                 os.remove(path)
             else:
                 print("stopping")
                 exit()
 
 
-
 def main():
     args = get_args()
     hedge_words = get_hedge_words(args.hedge_char_file)
 
-    check_delete_file(args.output_file, args.auto_accept)
+    check_delete_file(args.output_file_training, args.auto_accept)
+    check_delete_file(args.output_file_testing, args.auto_accept)
 
-    with open(args.output_file, "w") as output_file:
-        output_file_csv = csv.writer(output_file)
-        output_file_csv.writerow([
-            "content",
-            "username",
-            "upload_date",
-            "category",
-            "misinformation_type",
-            "datasource",
-            "hedge_words_count",
-            "symobls",
-            "all_caps",
-        ])
+    with open(args.output_file_testing, "w") as output_file_testing:
+        with open(args.output_file_training, "w") as output_file_training:
+            csv.writer(output_file_training).writerow(CSV_HEADERS)
+            csv.writer(output_file_testing).writerow(CSV_HEADERS)
 
-        process_file(
-            hedge_words,
-            args.input_true_file,
-            "true",
-            output_file,
-            args.parse_csv_in_memory,
-        )
-        process_file(
-            hedge_words,
-            args.input_fake_file,
-            "fake",
-            output_file,
-            args.parse_csv_in_memory,
-        )
+            process_file(
+                hedge_words,
+                args.input_true_file,
+                "true",
+                output_file_training,
+                output_file_testing,
+                args.parse_csv_in_memory,
+                args.training_percent,
+            )
+            process_file(
+                hedge_words,
+                args.input_fake_file,
+                "fake",
+                output_file_training,
+                output_file_testing,
+                args.parse_csv_in_memory,
+                args.training_percent,
+            )
 
 
 if __name__ == "__main__":
