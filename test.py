@@ -3,6 +3,7 @@
 import argparse
 from typing import Generator, List
 
+from sklearn.metrics import confusion_matrix
 import chromadb
 import numpy
 from chromadb.api.types import Document
@@ -159,6 +160,20 @@ def test_all_records(
             break
 
 
+def confusion_matrix_func():
+    conf_matrix = confusion_matrix(y_true=y_test, y_pred=y_pred)
+    fig, ax = plt.subplots(figsize=(7.5, 7.5))
+    ax.matshow(conf_matrix, cmap=plt.cm.Blues, alpha=0.3)
+    for i in range(conf_matrix.shape[0]):
+        for j in range(conf_matrix.shape[1]):
+            ax.text(x=j, y=i,s=conf_matrix[i, j], va='center', ha='center', size='xx-large')
+     
+    plt.xlabel('Predictions', fontsize=18)
+    plt.ylabel('Actuals', fontsize=18)
+    plt.title('Confusion Matrix', fontsize=18)
+    plt.show()
+
+
 def main():
     args = get_args()
 
@@ -178,8 +193,17 @@ def main():
         model_name=args.ollama_embedding_model,
     )
 
+    # (0, 0) = (class=true) correctly identified
+    # (0, 1) = (class=true) incorrectly identified
+    # (1, 0) = (class=fake) correctly identified
+    # (1, 1) = (class=fake) incorrectly identified
+
+    results_true = [ 0, 0 ]
+    results_fake = [ 0, 0 ]
+
     correct = 0
     incorrect = 0
+
     with Progress() as p:
         t = p.add_task(
             f"testing model: {records_c} records to be processed", total=records_c
@@ -187,6 +211,8 @@ def main():
         for result in test_all_records(
             args.test_file, ollama_ef, collection, records_c
         ):
+            input_class = result.input.misinfo_classification
+
             if (
                 not result.metadata
                 or len(result.metadata) < 1
@@ -194,18 +220,31 @@ def main():
                 or not result.distances
             ):
                 print("no closest match found")
-                incorrect += 1
+                if input_class == "true": 
+                    results_true[1] += 1
+                else:
+                    results_fake[1] += 1
             else:
                 score = result.metadata[0][0].get("misinformation")
                 if str(score) == result.input.misinfo_classification:
+                    if input_class == "true": 
+                        results_true[0] += 1
+                    else:
+                        results_fake[0] += 1
                     correct += 1
                 else:
                     incorrect += 1
+                    if input_class == "true": 
+                        results_true[1] += 1
+                    else:
+                        results_fake[1] += 1
                     # for i in range(0, len(result.items()) - 1):
                     #     print(f"\tIs: {result_metadata[0][i]};\n\t -> Distances: {result_distances[0][i]};\n\t -> Title: {result_documents[0][i]};")
             p.advance(t)
 
-    print(f"correct: {correct}, incorrect: {incorrect}")
+    print(f"correct: {correct}, incorrect: {incorrect}. confusion matrix (col1=correctly identified, col2=incorrect")
+    print(f" -> correct (class=true): {results_true}")
+    print(f" -> correct (class=fake): {results_fake}")
     print(f"accuracy: {100 * (correct / records_c)}%")
 
 

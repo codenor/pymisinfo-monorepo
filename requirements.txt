@@ -3,3 +3,4 @@ matplotlib
 chromadb
 ollama
 rich
+scikit-learn

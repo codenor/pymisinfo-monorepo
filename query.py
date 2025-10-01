@@ -17,6 +17,9 @@ if len(sys.argv) != 2:
 prompt = sys.argv[1]
 prompt_embedding = ollama_ef.embed_query([prompt])
 
+print(prompt)
+print(prompt_embedding)
+
 client = chromadb.PersistentClient(path="/var/lib/chroma/")
 collection = client.get_or_create_collection("misinformation")
 result = collection.query(

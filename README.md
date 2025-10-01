@@ -40,6 +40,22 @@ python import.py            # Import all data into ChromaDB
 python query.py "<prompt>"  # Search data within the ChromaDB database
 ```
 
+### Building `fasttext` on Podman
+
+This should also work on Docker by the way.
+
+To build the image, execute the following command:
+
+```
+podman image build . --tag "gomisinfoai"
+```
+
+Once that is done, you may then access the container using the following command:
+
+```sh
+podman run -it gomisinfoai fasttext <arguments>
+```
+
 ## Usage 
 
 ### Using `preprocess-vicuni.py`
