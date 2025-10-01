@@ -53,7 +53,7 @@ podman image build . --tag "gomisinfoai"
 Once that is done, you may then access the container using the following command:
 
 ```sh
-podman run -it gomisinfoai fasttext <arguments>
+podman run -it gomisinfoai ./fasttext <arguments>
 ```
 
 ## Usage 
