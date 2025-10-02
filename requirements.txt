@@ -4,3 +4,10 @@ chromadb
 ollama
 rich
 scikit-learn
+numpy
+scipy
+joblib
+matplotlib
+seaborn
+wordcloud
+jupyter

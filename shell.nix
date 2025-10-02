@@ -8,6 +8,14 @@ in pkgs.mkShell {
       chromadb
       ollama
       rich
+      numpy
+      scikit-learn
+      scipy
+      joblib
+      matplotlib
+      seaborn
+      wordcloud
+      jupyter
     ]))
   ];
 }
