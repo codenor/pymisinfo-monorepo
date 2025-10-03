@@ -15,7 +15,7 @@ def vectorise(
     df = pd.read_csv(in_path)
     X, y = df["text"], df["label"]
 
-    vectoriser = TfidfVectorizer(stop_words="english", max_features=5000)
+    vectoriser = TfidfVectorizer(stop_words="english")
     X_tfidf = vectoriser.fit_transform(X)
 
     sp.save_npz(out_X, X_tfidf)

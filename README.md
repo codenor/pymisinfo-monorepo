@@ -1,4 +1,4 @@
-# pymisinfoai-monorepo
+# pymisinfo
 
 - Used for data preparation and feature extraction for the detection of misinformation in text.
 - Tools include; data preprocessing, vectorisation etc.
