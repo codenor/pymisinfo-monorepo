@@ -9,7 +9,7 @@ from print_data import print_stuff
 
 def vectorise(
     in_path="./assets/processed/misinfo_dataset.csv",
-    out_X="./assets/features/tfidf-features.npz",
+    out_X="./assets/features/tfidf_features.npz",
     out_y="./assets/features/labels.csv",
     out_vec="./assets/features/vectoriser.pkl",
 ):

@@ -10,8 +10,8 @@ from sklearn.metrics import (
 
 
 def load_features():
-    x = sp.load_npz("/data/features/tfidf_features.npz")
-    y = pd.read_csv("/data/features/labels.csv")["label"]
+    x = sp.load_npz("./assets/features/tfidf_features.npz")
+    y = pd.read_csv("./assets/features/labels.csv")["label"]
     return x, y
 
 

@@ -5,3 +5,4 @@ assets/preprocessed-testing.csv
 assets/output.csv
 assets/features
 assets/processed
+__pycache__

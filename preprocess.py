@@ -24,7 +24,7 @@ def preprocess():
 
     # Save processed dataset to data dir
     df.to_csv("assets/processed/misinfo_dataset.csv", index=False)
-    print("Saved to assets/processed/new-misinfo-dataset.csv")
+    print("Saved to assets/processed/")
 
 
 if __name__ == "__main__":
