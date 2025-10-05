@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def print_stuff():
-    processed = pd.read_csv("assets/processed/claims.csv")
+    processed = pd.read_csv("assets/raw/claims.csv")
     print(processed.head())
 
 

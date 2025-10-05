@@ -1,52 +1,44 @@
 import os
-import argparse
 import joblib
-from typing import Optional
-from utils import load_features, train_test_split_data, evaluate_supervised
+import pandas as pd
+import scipy.sparse as sp
+from utils import load_features
 from sklearn.linear_model import LogisticRegression
 
 
-def run_logreg(custom_text: Optional[str] = None):
+def run_logreg():
     # Load TF-IDF features + labels
-    X, y = load_features()
-    print(f"Loaded {X.shape[0]:,} records with {X.shape[1]:,} features")
-
-    # Train/test split
-    X_train, X_test, y_train, y_test = train_test_split_data(X, y)
-    print(f"Training set: {X_train.shape[0]:,} | Test set: {X_test.shape[0]:,}")
-
+    x_train, y_train = load_features()
+    
     # Train logistic regression
     model = LogisticRegression(max_iter=200)
-    model.fit(X_train, y_train)
+    model.fit(x_train, y_train)
 
-    if custom_text:
-        # Build absolute path to vectoriser.pkl
-        vec_path = os.path.join(
+    # Build absolute path to vectoriser.pkl
+    vec_path = os.path.join(
             os.path.dirname(__file__), "..", "assets", "features", "vectoriser.pkl"
         )
-        vec_path = os.path.abspath(vec_path)
+    vec_path = os.path.abspath(vec_path)
 
-        # Load vectorizer
-        vectorizer = joblib.load(vec_path)
+    # Load vectorizer
+    vectorizer = joblib.load(vec_path)
 
-        # Transform and predict custom input
-        X_custom = vectorizer.transform([custom_text])
-        prediction = model.predict(X_custom)[0]
+    # Transform and predict test data
+    vectorizer = joblib.load("./assets/features/vectoriser.pkl")
+    df = pd.read_csv("./assets/process/claim_test.csv")
+    x_test = df["claim"].astype(str)
+    y_test = df["label"]
 
-        print("\n- - - - - Custom Prediction - - - - -")
-        print(f"Input: {custom_text}")
-        print(f"Predicted label: {'FALSE' if prediction==0 else 'TRUE'}")
-        print("- - - - - - - - - - - - - - - - - - -\n")
-    else:
-        # Evaluate normally
-        print("- - - - - Logistic Regression - - - - - -")
-        evaluate_supervised(model, X_test, y_test)
-        print("- - - - - - - - - - - - - - - - - - - - - -")
+    x_test_tfidf = vectorizer.transform(x_test)
+    predictions = model.predict(x_test_tfidf)
+    correct = (predictions == y_test).sum()
+    total = len(y_test)
+    score = model.score(x_test_tfidf, y_test)
 
+
+    print("- - - - - Logistic Regression - - - - - -")
+    print(f"Correct Predictions: {correct}/{total}")
+    print(f"Model Score: {score:.4f}  ({score * 100:.2f}%)")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Logistic Regression Text Classifier")
-    parser.add_argument("--text", type=str, help="Custom text")
-    args = parser.parse_args()
-
-    run_logreg(custom_text=args.text)
+    run_logreg()

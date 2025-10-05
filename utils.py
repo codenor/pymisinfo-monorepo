@@ -1,6 +1,5 @@
 import pandas as pd
 import scipy.sparse as sp
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
     classification_report,
     confusion_matrix,
@@ -13,12 +12,6 @@ def load_features():
     x = sp.load_npz("./assets/features/tfidf_features.npz")
     y = pd.read_csv("./assets/features/labels.csv")["label"]
     return x, y
-
-
-def train_test_split_data(x, y, test_size=0.2, stratify=True):
-    return train_test_split(
-        x, y, test_size=test_size, random_state=42, stratify=y if stratify else None
-    )
 
 
 def evaluate_supervised(model, X_test, y_test):
