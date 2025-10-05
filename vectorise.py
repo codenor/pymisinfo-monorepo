@@ -8,14 +8,14 @@ from print_data import print_stuff
 
 
 def vectorise(
-    in_path="./assets/processed/misinfo_dataset.csv",
+    in_path="./assets/processed/claims.csv",
     out_X="./assets/features/tfidf_features.npz",
     out_y="./assets/features/labels.csv",
     out_vec="./assets/features/vectoriser.pkl",
 ):
     # Convert text into TF-IDF features and save artifacts
     df = pd.read_csv(in_path)
-    X, y = df["text"], df["label"]
+    X, y = df["claim"], df["label"]
 
     vectoriser = TfidfVectorizer(stop_words="english")
     X_tfidf = vectoriser.fit_transform(X)
