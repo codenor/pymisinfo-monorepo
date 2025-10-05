@@ -9,9 +9,11 @@ from sklearn.linear_model import LogisticRegression
 def run_logreg(custom_text: Optional[str] = None):
     # Load TF-IDF features + labels
     X, y = load_features()
+    print(f"Loaded {X.shape[0]:,} records with {X.shape[1]:,} features")
 
     # Train/test split
     X_train, X_test, y_train, y_test = train_test_split_data(X, y)
+    print(f"Training set: {X_train.shape[0]:,} | Test set: {X_test.shape[0]:,}")
 
     # Train logistic regression
     model = LogisticRegression(max_iter=200)
