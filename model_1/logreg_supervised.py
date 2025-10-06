@@ -7,25 +7,27 @@ from sklearn.linear_model import LogisticRegression
 
 
 def run_logreg():
-    # Load TF-IDF features + labels
-    x_train, y_train = load_features()
-    
-    # Train logistic regression
-    model = LogisticRegression(max_iter=200)
-    model.fit(x_train, y_train)
+    model_path = "./assets/logreg_model.pkl"
+    vec_path = "./assets/features/vectoriser.pkl"
+    data_path = "./assets/processed/misinfo_dataset.csv"
 
-    # Build absolute path to vectoriser.pkl
-    vec_path = os.path.join(
-            os.path.dirname(__file__), "..", "assets", "features", "vectoriser.pkl"
-        )
-    vec_path = os.path.abspath(vec_path)
+    # Load or train model
+    if os.path.exists(model_path):
+        print("Loading existing Logistic Regression model...")
+        model = joblib.load(model_path)
+    else:
+        print("Training new Logistic Regression model...")
+        x_train, y_train = load_features()
+        model = LogisticRegression(max_iter=200)
+        model.fit(x_train, y_train)
+        joblib.dump(model, model_path)
+        print(f"Model saved to {model_path}")
 
     # Load vectorizer
     vectorizer = joblib.load(vec_path)
 
-    # Transform and predict test data
-    vectorizer = joblib.load("./assets/features/vectoriser.pkl")
-    df = pd.read_csv("./assets/process/claim_test.csv")
+    # Load dataset for evaluation
+    df = pd.read_csv(data_path)
     x_test = df["claim"].astype(str)
     y_test = df["label"]
 
@@ -35,10 +37,10 @@ def run_logreg():
     total = len(y_test)
     score = model.score(x_test_tfidf, y_test)
 
-
     print("- - - - - Logistic Regression - - - - - -")
     print(f"Correct Predictions: {correct}/{total}")
-    print(f"Model Score: {score:.4f}  ({score * 100:.2f}%)")
+    print(f"Model Score: {score:.4f} ({score * 100:.2f}%)")
+
 
 if __name__ == "__main__":
     run_logreg()

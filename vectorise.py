@@ -7,24 +7,24 @@ from print_data import print_stuff
 
 
 def vectorise(
-    in_path="./assets/raw/claims.csv",
+    in_path="./assets/processed/misinfo_dataset.csv",
     out_X="./assets/features/tfidf_features.npz",
     out_y="./assets/features/labels.csv",
     out_vec="./assets/features/vectoriser.pkl",
 ):
-    # Convert text into TF-IDF features and save artifacts
     df = pd.read_csv(in_path)
     X = df["claim"]
     y = df["label"]
 
+    print(
+        f"Starting TF-IDF vectorisation on {len(X):,} claims. . . (This may take awhile)"
+    )
     vectoriser = TfidfVectorizer(
-            lowercase=True,
-            stop_words="english",
-            max_features=5000,
-            ngram_range=(1, 3)
-
+        lowercase=True, stop_words="english", ngram_range=(1, 3)
     )
     X_tfidf = vectoriser.fit_transform(X)
+    print("TF-IDF vectorisation complete.")
+    print("Please wait while files are being saved. . .")
 
     sp.save_npz(out_X, X_tfidf)
     y.to_csv(out_y, index=False)
