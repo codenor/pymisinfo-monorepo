@@ -1,30 +1,37 @@
+#!/usr/bin/env python
+# logreg_supervised.py
+# ---------------------------------------------
+# Loads the TF‑IDF matrix, labels, vectoriser and the
+# RandomForest model trained in `vectorise.py`,
+# evaluates on a held‑out test split and prints
+# a classification report.
+# ---------------------------------------------
+
 import os
 
 import joblib
 import pandas as pd
-import scipy.sparse as sp
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
 from utils_but_correct_module import load_features
 
 
-def run_logreg():
-    # Load TF-IDF features + labels
+def train():
+    print("loading features")
     x_train, y_train = load_features()
 
-    # Train logistic regression
-    model = LogisticRegression(max_iter=200)
+    print("fitting data into RandomForecastClassifier")
+    model = RandomForestClassifier()
     model.fit(x_train, y_train)
 
-    # Build absolute path to vectoriser.pkl
+    print("loading vectors from feature extraction")
     vec_path = os.path.join(
         os.path.dirname(__file__), "..", "assets", "features", "vectoriser.pkl"
     )
     vec_path = os.path.abspath(vec_path)
-
-    # Load vectorizer
     vectorizer = joblib.load(vec_path)
 
-    # Transform and predict test data
+    print("generating predictions")
     vectorizer = joblib.load("./assets/features/vectoriser.pkl")
     df = pd.read_csv("./assets/process/claim_test.csv")
     x_test = df["claim"].astype(str)
@@ -36,10 +43,10 @@ def run_logreg():
     total = len(y_test)
     score = model.score(x_test_tfidf, y_test)
 
-    print("- - - - - Logistic Regression - - - - - -")
+    print("- - - - - Random Forecast Classifier - - - - - -")
     print(f"Correct Predictions: {correct}/{total}")
     print(f"Model Score: {score:.4f}  ({score * 100:.2f}%)")
 
 
 if __name__ == "__main__":
-    run_logreg()
+    train()

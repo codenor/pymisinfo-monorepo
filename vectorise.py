@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-import scipy.sparse as sp
 import joblib
+import pandas as pd
+import scipy.sparse as sp
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 from print_data import print_stuff
 
 
@@ -18,11 +19,7 @@ def vectorise(
     y = df["label"]
 
     vectoriser = TfidfVectorizer(
-            lowercase=True,
-            stop_words="english",
-            max_features=5000,
-            ngram_range=(1, 3)
-
+        lowercase=True, stop_words="english", max_features=5000, ngram_range=(1, 3)
     )
     X_tfidf = vectoriser.fit_transform(X)
 
