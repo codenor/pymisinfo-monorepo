@@ -8,9 +8,10 @@ import pandas as pd
 import seaborn as sns
 from joblib import Parallel, delayed
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import root_mean_squared_error
 from sklearn.model_selection import train_test_split
 from rf_utils import load_features
+from utils import test_model
 
 BASE_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "assets", "rf_model")
@@ -25,7 +26,7 @@ def train(model_name: str):
     x_train, y_train = load_features()
 
     print("fitting data into RandomForecastClassifier")
-    model = RandomForestClassifier(n_estimators=700, max_depth=20, min_samples_split=4, min_samples_leaf=2)
+    model = RandomForestClassifier(n_estimators=100, max_depth=10, min_samples_split=4, min_samples_leaf=2)
     model.fit(x_train, y_train)
 
     print(f"saving model to: {model_path}")
@@ -64,7 +65,7 @@ def chart_tree_count_affect_rsme():
         probs = rf.predict_proba(X_val)
         prob_pos = np.take(probs, 1, axis=1).ravel()  # probability of class “1”
 
-        rmse = np.sqrt(mean_squared_error(y_val, prob_pos))
+        rmse = np.sqrt(root_mean_squared_error(y_val, prob_pos))
         elapsed = time.time() - start
         print(f" -> done {n_trees}/{max_tree_count} (time={elapsed}s rsme={rmse})")
 
@@ -90,6 +91,7 @@ def chart_tree_count_affect_rsme():
     plt.show()
 
 
+
 def test(model_name: str):
     model_path = os.path.join(MODELS_DIR, f"{model_name}.pkl")
     print(f"loading model from: {model_path}")
@@ -103,17 +105,8 @@ def test(model_name: str):
     vectoriser = joblib.load(vec_path)
 
     print("generating predictions")
-    vectoriser = joblib.load("./assets/features/vectoriser.pkl")
     df = pd.read_csv("./assets/process/claim_test.csv")
     x_test = df["claim"].astype(str)
     y_test = df["label"]
 
-    x_test_tfidf = vectoriser.transform(x_test)
-    predictions = model.predict(x_test_tfidf)
-    correct = (predictions == y_test).sum()
-    total = len(y_test)
-    score = model.score(x_test_tfidf, y_test)
-
-    print("- - - - - Random Forecast Classifier - - - - - -")
-    print(f"Correct Predictions: {correct}/{total}")
-    print(f"Model Score: {score:.4f}  ({score * 100:.2f}%)")
+    test_model(model, vectoriser, x_test, y_test)
