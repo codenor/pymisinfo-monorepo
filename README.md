@@ -2,6 +2,16 @@
 
 ## Training setup
 
+### Requirements
+
+- Python
+- Pip
+
+Install required libraries:
+```
+pip install -r requirements.txt
+```
+
 ### Model 1 - Logistic Regression
 
 Run TF-IDF vectoriser:
