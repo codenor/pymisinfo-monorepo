@@ -1,5 +1,22 @@
 # pymisinfo
 
+## Training setup
+
+### Model 1 - Logistic Regression
+
+Run TF-IDF vectoriser:
+
+```
+python vectoriser.py
+```
+
+Run logreg module to train model:
+```
+python -m model_1.logreg_supervised
+```
+
+---
+
 - Used for data preparation and feature extraction for the detection of misinformation in text.
 - Tools include; data preprocessing, vectorisation etc.
 - vectorisation is done via TF-IDF for both supervised and unsupervised models.
