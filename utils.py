@@ -1,15 +1,7 @@
-import os
-import time
-
-import joblib
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
-import seaborn as sns
-from joblib import Parallel, delayed
-from rf_utils import load_features
-from sklearn.ensemble import RandomForestClassifier
+from scipy.sparse import csr_matrix
 from sklearn.metrics import (
     accuracy_score,
     adjusted_rand_score,
@@ -20,13 +12,17 @@ from sklearn.metrics import (
     recall_score,
     silhouette_score,
 )
-from sklearn.model_selection import train_test_split
+from typing import Tuple
+from scipy.sparse import csr_matrix
 
+def load_features(split: str = "train") -> Tuple[csr_matrix, pd.Series]:
+    valid_splits = {"train", "val", "test"}
+    if split not in valid_splits:
+        raise ValueError(f"Invalid split '{split}'. Must be one of {valid_splits}.")
 
-def load_features():
-    x = sp.load_npz("./assets/features/tfidf_features.npz")
-    y = pd.read_csv("./assets/features/labels.csv")["label"]
-    return x, y
+    X = sp.load_npz(f"./assets/features/X_{split}_tfidf.npz")
+    y = pd.read_csv(f"./assets/features/y_{split}.csv")["label"]
+    return X, y
 
 
 def evaluate_supervised(model, X_test, y_test):

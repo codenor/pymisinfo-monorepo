@@ -16,6 +16,7 @@ in pkgs.mkShell {
       seaborn
       wordcloud
       jupyter
+      umap-learn
     ]))
   ];
 }
