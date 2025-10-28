@@ -67,13 +67,13 @@ evaluate_supervised()
 evaluate_unsupervised()
 
 ```
-## 🔮 Model 2 – Bidirectional LSTM (Deep Learning)
+## Model 2 – Bidirectional LSTM (Deep Learning)
 
 A context-aware neural model that captures sequential language dependencies to better distinguish factual from misinformative text.
 
 ---
 
-### 📘 Dataset Format
+### Dataset Format
 
 CSV input required at:
 
@@ -82,7 +82,7 @@ CSV input required at:
 ```
 ---
 
-### 🗂️ Directory Structure
+### Directory Structure
 
 ```
 model_2/
@@ -101,7 +101,7 @@ assets/
 
 ---
 
-### 🧠 Setup & Dependencies
+### Setup & Dependencies
 
 ```bash
 python -m venv venv
@@ -111,9 +111,9 @@ pip install numpy pandas joblib tensorflow ftfy nltk scikit-learn matplotlib
 
 ---
 
-## 🚀 Workflow for Model 2
+## Workflow for Model 2
 
-### **1️⃣ (Optional) Suggest Sequence Length**
+### **(Optional) Suggest Sequence Length**
 
 ```bash
 python -m model_2.suggest_maxlen --in ./assets/processed/misinfo_dataset.csv
@@ -130,7 +130,7 @@ Recommended maxlen @ p95: 273
 
 ---
 
-### **2️⃣ Preprocess Dataset**
+### **Preprocess Dataset**
 
 ```bash
 python -m model_2.text_preprocessing --preview
@@ -149,7 +149,7 @@ assets/features/
 
 ---
 
-### **3️⃣ Train BiLSTM**
+### **Train BiLSTM**
 
 ```bash
 python -m model_2.train_bilstm --epochs 12 --batch 64
@@ -166,7 +166,7 @@ assets/features/
 
 ---
 
-### **4️⃣ Evaluate Model**
+### **Evaluate Model**
 
 ```bash
 python -m model_2.evaluate
@@ -189,7 +189,7 @@ Example JSON:
 
 ---
 
-### **5️⃣ Inspect Misclassifications**
+### **Inspect Misclassifications**
 
 ```bash
 python -m model_2.misclassified --thr 0.38 --limit 10
@@ -199,7 +199,7 @@ Shows false negatives and false positives for manual inspection.
 
 ---
 
-### **6️⃣ Tune Hyperparameters**
+### **Tune Hyperparameters**
 
 #### Random Search (recommended)
 
@@ -223,7 +223,7 @@ assets/features/
 
 ---
 
-## 🪮 Command Recap
+## Command Recap
 
 ```bash
 # 1. (Optional)
@@ -247,7 +247,7 @@ python -m model_2.tune_bilstm --trials 12 --mode random --seed 42
 
 ---
 
-## 📊 Output Summary
+## Output Summary
 
 | File                       | Description               |
 | -------------------------- | ------------------------- |
