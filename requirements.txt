@@ -12,6 +12,7 @@ seaborn
 wordcloud
 jupyter
 umap-learn
+pika
 
 numpy
 pandas
